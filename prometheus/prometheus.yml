@@ -1,0 +1,35 @@
+# Конфигурация Prometheus для серверного hardware-мониторинга
+# Собирает метрики с локальных экспортеров (host-network).
+
+global:
+  scrape_interval: 15s      # как часто собирать (для железа достаточно)
+  evaluation_interval: 15s
+
+rule_files:
+  - /etc/prometheus/rules/*.yml   # опциональные алерты (папка rules/)
+
+scrape_configs:
+  # Сам Prometheus
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Базовые метрики ОС: CPU, RAM, диск, сеть
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['localhost:9100']
+
+  # Железо/платформа: температура BMC, вентиляторы, питание, статус
+  - job_name: 'ipmi'
+    static_configs:
+      - targets: ['localhost:9290']
+
+  # Здоровье накопителей (S.M.A.R.T)
+  - job_name: 'smartctl'
+    static_configs:
+      - targets: ['localhost:9633']
+
+  # NVIDIA GPU (DCGM). Будет DOWN, пока на хосте не поднят драйвер.
+  - job_name: 'dcgm'
+    static_configs:
+      - targets: ['localhost:9400']

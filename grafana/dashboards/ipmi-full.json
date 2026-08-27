@@ -1,0 +1,685 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "type": "row",
+      "id": 100,
+      "title": "Сводная мощность за период",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "type": "timeseries",
+      "id": 104,
+      "title": "Суммарная мощность (все каналы)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": null
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 1
+      },
+      "description": "Сумма мощности по всем каналам IPMI. Провал до ~0 = отвал PSU/сброс; плато = пик потребления.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt",
+          "custom": {
+            "fillOpacity": 8,
+            "lineWidth": 2,
+            "spanNulls": true,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": true,
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "min",
+            "max",
+            "mean"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(ipmi_power_watts{name=~\"$power_group\"})",
+          "legendFormat": "Σ Pwr (Вт)",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "id": 120,
+      "title": "Температуры — все датчики (по сенсорам + max/avg)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": null
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      },
+      "description": "Сенсоры по выбранной группе + max/avg по группе. Любой набор железа подхватится по regex.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "custom": {
+            "fillOpacity": 8,
+            "lineWidth": 2,
+            "spanNulls": true,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": true,
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "min",
+            "max",
+            "mean"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "expr": "ipmi_temperature_celsius{name=~\"$temp_group\"}",
+          "legendFormat": "{{name}}",
+          "refId": "A"
+        },
+        {
+          "expr": "max(ipmi_temperature_celsius{name=~\"$temp_group\"})",
+          "legendFormat": "max",
+          "refId": "B"
+        },
+        {
+          "expr": "avg(ipmi_temperature_celsius{name=~\"$temp_group\"})",
+          "legendFormat": "avg",
+          "refId": "C"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "id": 121,
+      "title": "Темп. питания / VR / PSU (если есть)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": null
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 18
+      },
+      "description": "VRM, регуляторы питания и PSU-датчики. Тепловой контроль VR/блока питания.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "custom": {
+            "fillOpacity": 8,
+            "lineWidth": 2,
+            "spanNulls": true,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": true,
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "min",
+            "max",
+            "mean"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "expr": "ipmi_temperature_celsius{name=~\"PSU.*|VR.*|Pwr.*|Supply.*\"}",
+          "legendFormat": "{{name}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "id": 122,
+      "title": "Вентиляторы — все (RPM)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": null
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 18
+      },
+      "description": "Все вентиляторы (системные, PSU, GPU). Падение до 0 = остановка вентилятора.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "rpm",
+          "custom": {
+            "fillOpacity": 8,
+            "lineWidth": 2,
+            "spanNulls": true,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": true,
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "min",
+            "max",
+            "mean"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "expr": "ipmi_fan_speed_rpm{name=~\"$fan_group\"}",
+          "legendFormat": "{{name}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "id": 130,
+      "title": "Напряжения — все (В)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": null
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 26
+      },
+      "description": "Провалы напряжения = импульсы нагрузки / деградация PSU; резкие ступени = переключение питания.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "volt",
+          "custom": {
+            "fillOpacity": 8,
+            "lineWidth": 2,
+            "spanNulls": true,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": true,
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "min",
+            "max",
+            "mean"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "expr": "ipmi_voltage_volts{name=~\"$volt_group\"}",
+          "legendFormat": "{{name}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "id": 131,
+      "title": "Мощность — все каналы (Вт)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": null
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 26
+      },
+      "description": "Потребление по отдельным каналам: VR, PSU, P12V-линии.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt",
+          "custom": {
+            "fillOpacity": 8,
+            "lineWidth": 2,
+            "spanNulls": true,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": true,
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "min",
+            "max",
+            "mean"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "expr": "ipmi_power_watts{name=~\"$power_group\"}",
+          "legendFormat": "{{name}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "id": 132,
+      "title": "Ток — все каналы (А)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": null
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 34
+      },
+      "description": "Токи по каналам питания. Скачки = всплески нагрузки.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "amp",
+          "custom": {
+            "fillOpacity": 8,
+            "lineWidth": 2,
+            "spanNulls": true,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": true,
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "min",
+            "max",
+            "mean"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "expr": "ipmi_current_amperes{name=~\"$power_group\"}",
+          "legendFormat": "{{name}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "id": 150,
+      "title": "Таблицы всех сенсоров (самоподстраиваются)",
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 40
+      },
+      "panels": [
+        {
+          "type": "table",
+          "id": 140,
+          "title": "Все температуры",
+          "datasource": {
+            "type": "prometheus",
+            "uid": null
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 8,
+            "x": 0,
+            "y": 40
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "decimals": 0,
+              "overrides": []
+            },
+            "overrides": []
+          },
+          "options": {
+            "showHeader": true,
+            "sortBy": [
+              {
+                "displayName": "Value",
+                "desc": true
+              }
+            ]
+          },
+          "targets": [
+            {
+              "expr": "ipmi_temperature_celsius{name=~\"$temp_group\"}",
+              "format": "table",
+              "instant": true,
+              "refId": "A"
+            }
+          ],
+          "transformations": [
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {
+                  "Time": true,
+                  "__name__": true,
+                  "instance": true,
+                  "job": true,
+                  "id": true,
+                  "state": true
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "table",
+          "id": 141,
+          "title": "Вентиляторы",
+          "datasource": {
+            "type": "prometheus",
+            "uid": null
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 7,
+            "x": 8,
+            "y": 40
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "decimals": 0,
+              "overrides": []
+            },
+            "overrides": []
+          },
+          "options": {
+            "showHeader": true,
+            "sortBy": [
+              {
+                "displayName": "Value",
+                "desc": true
+              }
+            ]
+          },
+          "targets": [
+            {
+              "expr": "ipmi_fan_speed_rpm{name=~\"$fan_group\"}",
+              "format": "table",
+              "instant": true,
+              "refId": "A"
+            }
+          ],
+          "transformations": [
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {
+                  "Time": true,
+                  "__name__": true,
+                  "instance": true,
+                  "job": true,
+                  "id": true,
+                  "state": true
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "table",
+          "id": 142,
+          "title": "Напряжения / Ток / Мощность",
+          "datasource": {
+            "type": "prometheus",
+            "uid": null
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 9,
+            "x": 15,
+            "y": 40
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "decimals": 0,
+              "overrides": []
+            },
+            "overrides": []
+          },
+          "options": {
+            "showHeader": true,
+            "sortBy": [
+              {
+                "displayName": "Value",
+                "desc": true
+              }
+            ]
+          },
+          "targets": [
+            {
+              "expr": "ipmi_voltage_volts{name=~\"$volt_group\"}",
+              "format": "table",
+              "instant": true,
+              "refId": "A"
+            },
+            {
+              "expr": "ipmi_current_amperes{name=~\"$power_group\"}",
+              "format": "table",
+              "instant": true,
+              "refId": "B"
+            },
+            {
+              "expr": "ipmi_power_watts{name=~\"$power_group\"}",
+              "format": "table",
+              "instant": true,
+              "refId": "C"
+            }
+          ],
+          "transformations": [
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {
+                  "Time": true,
+                  "__name__": true,
+                  "instance": true,
+                  "job": true,
+                  "id": true,
+                  "state": true
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "refresh": "15s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": [
+    "hardware",
+    "ipmi"
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "temp_group",
+        "type": "custom",
+        "label": "Температуры (все)",
+        "query": ".*",
+        "hide": 2,
+        "options": [
+          {
+            "selected": true,
+            "text": "Все",
+            "value": ".*"
+          }
+        ],
+        "current": {
+          "text": "Все",
+          "value": ".*"
+        }
+      },
+      {
+        "name": "fan_group",
+        "type": "custom",
+        "label": "Вентиляторы (все)",
+        "query": ".*",
+        "hide": 2,
+        "options": [
+          {
+            "selected": true,
+            "text": "Все",
+            "value": ".*"
+          }
+        ],
+        "current": {
+          "text": "Все",
+          "value": ".*"
+        }
+      },
+      {
+        "name": "volt_group",
+        "type": "custom",
+        "label": "Напряжения (все)",
+        "query": ".*",
+        "hide": 2,
+        "options": [
+          {
+            "selected": true,
+            "text": "Все",
+            "value": ".*"
+          }
+        ],
+        "current": {
+          "text": "Все",
+          "value": ".*"
+        }
+      },
+      {
+        "name": "power_group",
+        "type": "custom",
+        "label": "Питание VR/PSU (все)",
+        "query": ".*",
+        "hide": 2,
+        "options": [
+          {
+            "selected": true,
+            "text": "Все",
+            "value": ".*"
+          }
+        ],
+        "current": {
+          "text": "Все",
+          "value": ".*"
+        }
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "15s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h"
+    ]
+  },
+  "timezone": "",
+  "title": "IPMI Full Hardware Sensors",
+  "uid": "ipmi-full",
+  "version": 4
+}

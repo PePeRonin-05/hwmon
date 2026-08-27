@@ -1,0 +1,94 @@
+# Серверный hardware-мониторинг: Prometheus + Grafana + exporters
+# Всё поднимается одной командой:  docker compose up -d
+services:
+  # ---------- Бэкенды (экспортеры железа) ----------
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    network_mode: "host"          # видит локальные интерфейсы хоста
+    pid: "host"                   # видит процессы хоста, а не контейнера
+    restart: unless-stopped
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+
+  ipmi-exporter:
+    image: prometheuscommunity/ipmi-exporter:latest
+    container_name: ipmi-exporter
+    user: "0:0"                   # нужен root для доступа к /dev/ipmi0 (BMC)
+    network_mode: "host"
+    restart: unless-stopped
+    privileged: true              # нужен доступ к /dev/ipmi*
+    volumes:
+      - /dev:/dev:ro            # доступ к /dev/ipmi0 (BMC)
+
+  smartctl-exporter:
+    image: prometheuscommunity/smartctl-exporter:latest
+    container_name: smartctl-exporter
+    user: "0:0"                   # нужен root для доступа к /dev/sd*
+    network_mode: "host"
+    restart: unless-stopped
+    privileged: true
+    volumes:
+      - /dev:/dev:ro
+      - /run/udev:/run/udev:ro
+    command:
+      - '--smartctl.path=/usr/sbin/smartctl'
+      - '--smartctl.interval=60s'
+
+  # NVIDIA GPU. Драйвер на хосте должен быть поднят (nvidia-smi).
+  dcgm-exporter:
+    image: nvcr.io/nvidia/k8s/dcgm-exporter:4.6.0-4.8.3-ubuntu22.04
+    container_name: dcgm-exporter
+    network_mode: "host"
+    restart: unless-stopped
+    privileged: true
+    profiles: ["gpu"]             # активно только с --profile gpu
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    volumes:
+      - /proc/driver/nvidia:/proc/driver/nvidia:ro
+      - /etc/nvidia-smi:/etc/nvidia-smi:ro
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    network_mode: "host"
+    restart: unless-stopped
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    network_mode: "host"
+    restart: unless-stopped
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro   # автонастройка
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro     # готовые дашборды
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+
+volumes:
+  prometheus_data:
+  grafana_data:
